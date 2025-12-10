@@ -2,9 +2,9 @@
 #include "../../wrappers/spi/spi.h"
 #include <string.h>
 
-// WS2812 timing constants (typical values for 800kHz SPI)
-#define WS2812_ONE_FRAME 0xFF     // 11111111 - for '1' bit
-#define WS2812_ZERO_FRAME 0xC0    // 11000000 - for '0' bit (adjust based on timing)
+// WS2812 timing constants (for 4 MHz SPI)
+#define WS2812_ONE_FRAME 0x70     // 01110000 - for '1' bit
+#define WS2812_ZERO_FRAME 0x40    // 00110000 - for '0' bit (adjust based on timing)
 #define WS2812_RESET_DELAY_US 80  // Minimum reset delay in microseconds
 #define BITS_PER_COLOR 8
 #define COLORS_PER_PIXEL 3  // G, R, B order for WS2812
