@@ -3,6 +3,22 @@
 
 #include <stdint.h>
 
+// Error codes
+typedef enum
+{
+    RLED_OK                = 0,
+    RLED_ERR_NULL_POINTER  = -1,
+    RLED_ERR_INVALID_TYPE  = -2,
+    RLED_ERR_INIT_FAILED   = -3,
+    RLED_ERR_INVALID_PARAM = -4
+} rled_error_t;
+
+// Forward declarations for hardware config structs
+typedef struct rled_gpio_config rled_gpio_config_t;
+typedef struct rled_pwm_config rled_pwm_config_t;
+typedef struct rled_rgb_config rled_rgb_config_t;
+typedef struct rled_ws2812_config rled_ws2812_config_t;
+
 // LED types
 typedef enum
 {
@@ -36,11 +52,18 @@ typedef struct
 } rled_t;
 
 // Application level APIs
-void rled_init(rled_t* led);
-void rled_on(rled_t* led);
-void rled_off(rled_t* led);
-void rled_toggle(rled_t* led);                                      // Optional
-void rled_set_brightness(rled_t* led, uint8_t brightness);          // For PWM
-void rled_set_color(rled_t* led, uint8_t r, uint8_t g, uint8_t b);  // For RGB and WS2812
+// Returns RLED_OK on success, error code on failure
+int rled_init(rled_t* led);
+int rled_on(rled_t* led);
+int rled_off(rled_t* led);
+int rled_toggle(rled_t* led);
+int rled_set_brightness(rled_t* led, uint8_t brightness);
+int rled_set_color(rled_t* led, uint8_t r, uint8_t g, uint8_t b);
+
+// Include hardware-specific config definitions
+#include "hw/gpio/rled_gpio.h"
+#include "hw/pwm/rled_pwm.h"
+#include "hw/rgb/rled_rgb.h"
+#include "hw/ws2812/rled_ws2812.h"
 
 #endif  // RLED_H

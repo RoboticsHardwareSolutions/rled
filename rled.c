@@ -4,111 +4,151 @@
 #include "hw/rgb/rled_rgb.h"
 #include "hw/ws2812/rled_ws2812.h"
 
-// Device instance for WS2812 (would typically be managed by application)
-static rled_ws2812_device_t ws2812_device;
-
-void rled_init(rled_t* led)
+int rled_init(rled_t* led)
 {
+    if (!led)
+    {
+        return RLED_ERR_NULL_POINTER;
+    }
+
+    int result = RLED_OK;
+
     switch (led->type)
     {
     case RLED_TYPE_GPIO:
-        rled_gpio_init(led->config.gpio);
+        result = rled_gpio_init(led->config.gpio);
         break;
     case RLED_TYPE_PWM:
-        rled_pwm_init(led->config.pwm);
+        result = rled_pwm_init(led->config.pwm);
         break;
     case RLED_TYPE_RGB:
-        rled_rgb_init(led->config.rgb);
+        result = rled_rgb_init(led->config.rgb);
         break;
     case RLED_TYPE_WS2812:
-        rled_ws2812_init(&ws2812_device, led->config.ws2812);
+        result = rled_ws2812_init(led->config.ws2812);
         break;
     default:
-        // Error handling
-        break;
+        return RLED_ERR_INVALID_TYPE;
     }
+
+    return result;
 }
 
-void rled_on(rled_t* led)
+int rled_on(rled_t* led)
 {
+    if (!led)
+    {
+        return RLED_ERR_NULL_POINTER;
+    }
+
+    int result = RLED_OK;
+
     switch (led->type)
     {
     case RLED_TYPE_GPIO:
-        rled_gpio_on(led->config.gpio);
+        result = rled_gpio_on(led->config.gpio);
         break;
     case RLED_TYPE_PWM:
-        rled_pwm_on(led->config.pwm);
+        result = rled_pwm_on(led->config.pwm);
         break;
     case RLED_TYPE_RGB:
-        rled_rgb_on(led->config.rgb);
+        result = rled_rgb_on(led->config.rgb);
         break;
     case RLED_TYPE_WS2812:
         // For WS2812, turn on with white color (full brightness)
-        rled_ws2812_set_all(&ws2812_device, 255, 255, 255);
+        result = rled_ws2812_set_all(led->config.ws2812, 255, 255, 255);
         break;
     default:
-        break;
+        return RLED_ERR_INVALID_TYPE;
     }
+
+    return result;
 }
 
-void rled_off(rled_t* led)
+int rled_off(rled_t* led)
 {
+    if (!led)
+    {
+        return RLED_ERR_NULL_POINTER;
+    }
+
+    int result = RLED_OK;
+
     switch (led->type)
     {
     case RLED_TYPE_GPIO:
-        rled_gpio_off(led->config.gpio);
+        result = rled_gpio_off(led->config.gpio);
         break;
     case RLED_TYPE_PWM:
-        rled_pwm_off(led->config.pwm);
+        result = rled_pwm_off(led->config.pwm);
         break;
     case RLED_TYPE_RGB:
-        rled_rgb_off(led->config.rgb);
+        result = rled_rgb_off(led->config.rgb);
         break;
     case RLED_TYPE_WS2812:
-        rled_ws2812_clear(&ws2812_device);
+        result = rled_ws2812_clear(led->config.ws2812);
         break;
     default:
-        break;
+        return RLED_ERR_INVALID_TYPE;
     }
+
+    return result;
 }
 
-void rled_toggle(rled_t* led)
+int rled_toggle(rled_t* led)
 {
+    if (!led)
+    {
+        return RLED_ERR_NULL_POINTER;
+    }
+
     switch (led->type)
     {
     case RLED_TYPE_GPIO:
-        rled_gpio_toggle(led->config.gpio);
-        break;
-    // For others, maybe not applicable, or implement if needed
+        return rled_gpio_toggle(led->config.gpio);
     default:
-        break;
+        // Toggle only supported for GPIO
+        return RLED_ERR_INVALID_TYPE;
     }
 }
 
-void rled_set_brightness(rled_t* led, uint8_t brightness)
+int rled_set_brightness(rled_t* led, uint8_t brightness)
 {
+    if (!led)
+    {
+        return RLED_ERR_NULL_POINTER;
+    }
+
     switch (led->type)
     {
     case RLED_TYPE_PWM:
-        rled_pwm_set_brightness(led->config.pwm, brightness);
-        break;
-    // For others, not applicable
+        return rled_pwm_set_brightness(led->config.pwm, brightness);
     default:
-        break;
+        // Set brightness only supported for PWM
+        return RLED_ERR_INVALID_TYPE;
     }
 }
 
-void rled_set_color(rled_t* led, uint8_t r, uint8_t g, uint8_t b)
+int rled_set_color(rled_t* led, uint8_t r, uint8_t g, uint8_t b)
 {
+    if (!led)
+    {
+        return RLED_ERR_NULL_POINTER;
+    }
+
+    int result = RLED_OK;
+
     switch (led->type)
     {
     case RLED_TYPE_RGB:
-        rled_rgb_set_color(led->config.rgb, r, g, b);
+        result = rled_rgb_set_color(led->config.rgb, r, g, b);
         break;
     case RLED_TYPE_WS2812:
-        rled_ws2812_set_all(&ws2812_device, r, g, b);
+        result = rled_ws2812_set_all(led->config.ws2812, r, g, b);
         break;
     default:
-        break;
+        return RLED_ERR_INVALID_TYPE;
     }
+
+    return result;
 }

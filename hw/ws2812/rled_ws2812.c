@@ -3,9 +3,9 @@
 #include <string.h>
 
 // WS2812 timing constants (for 4 MHz SPI)
-#define WS2812_ONE_FRAME 0x70     // 01110000 - for '1' bit
-#define WS2812_ZERO_FRAME 0x40    // 00110000 - for '0' bit (adjust based on timing)
-#define WS2812_RESET_DELAY_US 80  // Minimum reset delay in microseconds
+#define WS2812_ONE_FRAME 0xE0      // 01110000 - for '1' bit
+#define WS2812_ZERO_FRAME 0xC0     // 00110000 - for '0' bit (adjust based on timing)
+#define WS2812_RESET_DELAY_US 300  // Minimum reset delay in microseconds
 #define BITS_PER_COLOR 8
 #define COLORS_PER_PIXEL 3  // G, R, B order for WS2812
 
@@ -38,107 +38,106 @@ static void ws2812_encode_pixel(uint8_t g, uint8_t r, uint8_t b, uint8_t** buffe
 }
 
 // Reset delay function (simple delay)
-static void ws2812_reset_delay(void)
+static void ws2812_reset_delay(const rled_ws2812_config_t* config)
 {
     // Simple delay implementation - replace with proper delay function
-    for (volatile int i = 0; i < WS2812_RESET_DELAY_US * 10; i++)
-        ;
+    // for (volatile int i = 0; i < config->reset_delay_us * 10; i++)
+    // ;
+    spi_delay(config->hspi);
 }
 
 // Helper function to transmit buffer data
-static void ws2812_transmit_buffer(rled_ws2812_device_t* device)
+static int ws2812_transmit_buffer(const rled_ws2812_config_t* config)
 {
-    if (device && device->hspi && device->spi_buffer)
+    if (!config || !config->hspi || !config->spi_buffer)
     {
-        spi_transmit(device->hspi, device->spi_buffer, device->buffer_size, 1000);
-        ws2812_reset_delay();
+        return -1;
     }
+    spi_transmit(config->hspi, config->spi_buffer, config->buffer_size, 1000);
+    ws2812_reset_delay(config);
+    return 0;
 }
 
-void rled_ws2812_init(rled_ws2812_device_t* device, const rled_ws2812_config_t* config)
+int rled_ws2812_init(const rled_ws2812_config_t* config)
 {
-    if (!device || !config)
+    if (!config)
     {
-        return;
+        return -1;
     }
 
-    device->hspi           = config->hspi;
-    device->port           = config->port;
-    device->pin            = config->pin;
-    device->num_leds       = config->num_leds;
-    device->one_frame      = WS2812_ONE_FRAME;
-    device->zero_frame     = WS2812_ZERO_FRAME;
-    device->reset_delay_us = WS2812_RESET_DELAY_US;
-
-    // Use external buffer provided in config
-    device->buffer_size = config->buffer_size;
-    device->spi_buffer  = config->spi_buffer;
-
-    if (!device->spi_buffer)
+    if (!config->spi_buffer)
     {
         // Handle null buffer error
-        return;
+        return -3;
     }
 
     // Validate buffer size
     uint16_t required_size = CALC_BUFFER_SIZE(config->num_leds);
-    if (device->buffer_size < required_size)
+    if (config->buffer_size < required_size)
     {
         // Buffer too small
-        return;
+        return -4;
     }
 
     // Initialize all LEDs to off state
-    memset(device->spi_buffer, 0, device->buffer_size);
+    memset(config->spi_buffer, 0, config->buffer_size);
+    return 0;
 }
 
-void rled_ws2812_clear(rled_ws2812_device_t* device)
+int rled_ws2812_clear(const rled_ws2812_config_t* config)
 {
-    if (!device || !device->spi_buffer)
+    if (!config || !config->spi_buffer)
     {
-        return;
+        return -1;
     }
 
-    memset(device->spi_buffer, 0, device->buffer_size);
+    memset(config->spi_buffer, 0, config->buffer_size);
 
     // Send the cleared data to strip
-    ws2812_transmit_buffer(device);
+    return ws2812_transmit_buffer(config);
 }
 
-void rled_ws2812_set_all(rled_ws2812_device_t* device, uint8_t r, uint8_t g, uint8_t b)
+int rled_ws2812_set_all(const rled_ws2812_config_t* config, uint8_t r, uint8_t g, uint8_t b)
 {
-    if (!device || !device->spi_buffer)
+    if (!config || !config->spi_buffer)
     {
-        return;
+        return -1;
     }
 
-    uint8_t* buffer_ptr = device->spi_buffer;
+    uint8_t* buffer_ptr = config->spi_buffer;
 
     // Encode all LEDs with the same color
-    for (uint16_t i = 0; i < device->num_leds; i++)
+    for (uint16_t i = 0; i < config->num_leds; i++)
     {
         ws2812_encode_pixel(g, r, b, &buffer_ptr);
     }
 
     // Send the data to strip
-    ws2812_transmit_buffer(device);
+    return ws2812_transmit_buffer(config);
 }
 
-void rled_ws2812_set_color(rled_ws2812_device_t* device, uint8_t r, uint8_t g, uint8_t b)
+int rled_ws2812_set_color(const rled_ws2812_config_t* config, uint8_t r, uint8_t g, uint8_t b)
 {
     // For compatibility with existing rled.c - set first LED only
-    rled_ws2812_set_led(device, 0, r, g, b);
+    return rled_ws2812_set_led(config, 0, r, g, b);
 }
 
-void rled_ws2812_set_led(rled_ws2812_device_t* device, uint16_t led_index, uint8_t r, uint8_t g, uint8_t b)
+int rled_ws2812_set_led(const rled_ws2812_config_t* config, uint16_t led_index, uint8_t r, uint8_t g, uint8_t b)
 {
-    if (!device || !device->spi_buffer || led_index >= device->num_leds)
+    if (!config || !config->spi_buffer || led_index >= config->num_leds)
     {
-        return;
+        return -1;
+    }
+
+    // Validate buffer bounds before pointer arithmetic
+    uint16_t led_offset = led_index * COLORS_PER_PIXEL * BITS_PER_COLOR;
+    if (led_offset + (COLORS_PER_PIXEL * BITS_PER_COLOR) > config->buffer_size)
+    {
+        return -4;  // Buffer overflow protection
     }
 
     // Encode only the specified LED
-    uint8_t* buffer_ptr = device->spi_buffer + (led_index * COLORS_PER_PIXEL * BITS_PER_COLOR);
+    uint8_t* buffer_ptr = config->spi_buffer + led_offset;
 
     // First, clear the target LED
     memset(buffer_ptr, 0, COLORS_PER_PIXEL * BITS_PER_COLOR);
@@ -147,25 +146,25 @@ void rled_ws2812_set_led(rled_ws2812_device_t* device, uint16_t led_index, uint8
     ws2812_encode_pixel(g, r, b, &buffer_ptr);
 
     // Send the data to strip
-    ws2812_transmit_buffer(device);
+    return ws2812_transmit_buffer(config);
 }
 
-void rled_ws2812_set_strip(rled_ws2812_device_t* device, const uint8_t* colors, uint16_t num_leds)
+int rled_ws2812_set_strip(const rled_ws2812_config_t* config, const uint8_t* colors, uint16_t num_leds)
 {
-    if (!device || !device->spi_buffer || !colors)
+    if (!config || !config->spi_buffer || !colors)
     {
-        return;
+        return -1;
     }
 
-    if (num_leds > device->num_leds)
+    if (num_leds > config->num_leds)
     {
-        num_leds = device->num_leds;  // Limit to available LEDs
+        num_leds = config->num_leds;  // Limit to available LEDs
     }
 
-    uint8_t* buffer_ptr = device->spi_buffer;
+    uint8_t* buffer_ptr = config->spi_buffer;
 
     // Clear entire buffer first
-    memset(device->spi_buffer, 0, device->buffer_size);
+    memset(config->spi_buffer, 0, config->buffer_size);
 
     // Encode all LEDs from the color array
     for (uint16_t i = 0; i < num_leds; i++)
@@ -177,5 +176,5 @@ void rled_ws2812_set_strip(rled_ws2812_device_t* device, const uint8_t* colors, 
     }
 
     // Send the data to strip
-    ws2812_transmit_buffer(device);
+    return ws2812_transmit_buffer(config);
 }

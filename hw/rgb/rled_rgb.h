@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-typedef struct {
+typedef struct rled_rgb_config {
     void* htim_r;
     uint32_t channel_r;
     void* htim_g;
@@ -12,9 +12,10 @@ typedef struct {
     uint32_t channel_b;
 } rled_rgb_config_t;
 
-void rled_rgb_init(const rled_rgb_config_t* config);
-void rled_rgb_on(const rled_rgb_config_t* config);  // Turn on white?
-void rled_rgb_off(const rled_rgb_config_t* config);
-void rled_rgb_set_color(const rled_rgb_config_t* config, uint8_t r, uint8_t g, uint8_t b);
+// Returns 0 on success, negative on error
+int rled_rgb_init(const rled_rgb_config_t* config);
+int rled_rgb_on(const rled_rgb_config_t* config);
+int rled_rgb_off(const rled_rgb_config_t* config);
+int rled_rgb_set_color(const rled_rgb_config_t* config, uint8_t r, uint8_t g, uint8_t b);
 
 #endif // RLED_RGB_H

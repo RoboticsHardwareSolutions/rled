@@ -3,14 +3,15 @@
 
 #include <stdint.h>
 
-typedef struct {
+typedef struct rled_pwm_config {
     void* htim;
     uint32_t channel;
 } rled_pwm_config_t;
 
-void rled_pwm_init(const rled_pwm_config_t* config);
-void rled_pwm_on(const rled_pwm_config_t* config);
-void rled_pwm_off(const rled_pwm_config_t* config);
-void rled_pwm_set_brightness(const rled_pwm_config_t* config, uint8_t brightness);
+// Returns 0 on success, negative on error
+int rled_pwm_init(const rled_pwm_config_t* config);
+int rled_pwm_on(const rled_pwm_config_t* config);
+int rled_pwm_off(const rled_pwm_config_t* config);
+int rled_pwm_set_brightness(const rled_pwm_config_t* config, uint8_t brightness);
 
 #endif // RLED_PWM_H
