@@ -13,28 +13,28 @@
 #define CALC_BUFFER_SIZE(num_leds) ((num_leds) * COLORS_PER_PIXEL * BITS_PER_COLOR)
 
 // Encode a single color byte (8 bits) into SPI buffer
-static void ws2812_encode_byte(uint8_t color, uint8_t** buffer)
+static void ws2812_encode_byte(const rled_ws2812_config_t* config, uint8_t color, uint8_t** buffer)
 {
     for (int i = 7; i >= 0; i--)
     {
         uint8_t bit_value = (color >> i) & 0x01;
         if (bit_value)
         {
-            *(*buffer)++ = WS2812_ONE_FRAME;
+            *(*buffer)++ = config->one_frame;
         }
         else
         {
-            *(*buffer)++ = WS2812_ZERO_FRAME;
+            *(*buffer)++ = config->zero_frame;
         }
     }
 }
 
 // Encode a single RGB pixel in GRB order
-static void ws2812_encode_pixel(uint8_t g, uint8_t r, uint8_t b, uint8_t** buffer)
+static void ws2812_encode_pixel(const rled_ws2812_config_t* config, uint8_t g, uint8_t r, uint8_t b, uint8_t** buffer)
 {
-    ws2812_encode_byte(g, buffer);  // Green first
-    ws2812_encode_byte(r, buffer);  // Red second
-    ws2812_encode_byte(b, buffer);  // Blue third
+    ws2812_encode_byte(config, g, buffer);  // Green first
+    ws2812_encode_byte(config, r, buffer);  // Red second
+    ws2812_encode_byte(config, b, buffer);  // Blue third
 }
 
 // Reset delay function (simple delay)
@@ -109,7 +109,7 @@ int rled_ws2812_set_all(const rled_ws2812_config_t* config, uint8_t r, uint8_t g
     // Encode all LEDs with the same color
     for (uint16_t i = 0; i < config->num_leds; i++)
     {
-        ws2812_encode_pixel(g, r, b, &buffer_ptr);
+        ws2812_encode_pixel(config, g, r, b, &buffer_ptr);
     }
 
     // Send the data to strip
@@ -143,7 +143,7 @@ int rled_ws2812_set_led(const rled_ws2812_config_t* config, uint16_t led_index, 
     memset(buffer_ptr, 0, COLORS_PER_PIXEL * BITS_PER_COLOR);
 
     // Then encode the new color
-    ws2812_encode_pixel(g, r, b, &buffer_ptr);
+    ws2812_encode_pixel(config, g, r, b, &buffer_ptr);
 
     // Send the data to strip
     return ws2812_transmit_buffer(config);
@@ -172,7 +172,7 @@ int rled_ws2812_set_strip(const rled_ws2812_config_t* config, const uint8_t* col
         uint8_t r = colors[i * 3 + 0];
         uint8_t g = colors[i * 3 + 1];
         uint8_t b = colors[i * 3 + 2];
-        ws2812_encode_pixel(g, r, b, &buffer_ptr);
+        ws2812_encode_pixel(config, g, r, b, &buffer_ptr);
     }
 
     // Send the data to strip
