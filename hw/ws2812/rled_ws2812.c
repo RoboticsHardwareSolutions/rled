@@ -1,5 +1,6 @@
 #include "rled_ws2812.h"
 #include "../../wrappers/spi/spi.h"
+#include "SEGGER_RTT.h"
 #include <string.h>
 
 // WS2812 timing constants (for 4 MHz SPI)
@@ -46,14 +47,26 @@ static void ws2812_reset_delay(const rled_ws2812_config_t* config)
     spi_delay(config->hspi);
 }
 
-// Helper function to transmit buffer data
+// Helper function to transmit buffer data via DMA
 static int ws2812_transmit_buffer(const rled_ws2812_config_t* config)
 {
     if (!config || !config->hspi || !config->spi_buffer)
     {
         return -1;
     }
-    spi_transmit(config->hspi, config->spi_buffer, config->buffer_size, 1000);
+
+    // Initiate DMA transfer
+    if (spi_transmit_dma(config->hspi, config->spi_buffer, config->buffer_size) != SPI_STATUS_OK)
+    {
+        return -2;
+    }
+
+    // Wait for DMA to complete (1 second timeout)
+    if (spi_wait_transmission_complete(config->hspi, 1000) != SPI_STATUS_OK)
+    {
+        return -3;
+    }
+
     ws2812_reset_delay(config);
     return 0;
 }
@@ -77,6 +90,11 @@ int rled_ws2812_init(const rled_ws2812_config_t* config)
     {
         // Buffer too small
         return -4;
+    }
+
+    if (spi_register_cb(config->hspi))
+    {
+        SEGGER_RTT_printf(0, "failed to register cb");
     }
 
     // Initialize all LEDs to off state

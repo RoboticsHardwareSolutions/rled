@@ -12,6 +12,9 @@ typedef enum
 } SPI_Status;
 
 SPI_Status spi_transmit(SPI_Handle hspi, uint8_t* pData, uint16_t Size, uint32_t Timeout);
+SPI_Status spi_transmit_dma(SPI_Handle hspi, uint8_t* pData, uint16_t Size);
+SPI_Status spi_wait_transmission_complete(SPI_Handle hspi, uint32_t Timeout);
+SPI_Status spi_register_cb(SPI_Handle hspi);
 SPI_Status spi_delay(SPI_Handle hspi);
 
 #endif  // SPI_H
