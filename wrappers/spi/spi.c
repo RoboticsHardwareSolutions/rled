@@ -39,7 +39,6 @@ SPI_Status spi_transmit_dma(SPI_Handle hspi, uint8_t* pData, uint16_t Size)
     // Reset completion flag and initiate DMA transfer
     spi_dma_complete         = false;
     HAL_StatusTypeDef status = HAL_SPI_Transmit_DMA(spi, pData, Size);
-    SEGGER_RTT_printf(0, "spi dma status: %d\n", status);
     return (status == HAL_OK) ? SPI_STATUS_OK : SPI_STATUS_ERROR;
 }
 
