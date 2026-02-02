@@ -52,12 +52,15 @@ SPI_Status spi_wait_transmission_complete(SPI_Handle hspi, uint32_t Timeout)
     uint32_t start_tick = HAL_GetTick();
 
     // Wait for DMA completion flag with timeout
+    // Check flag without tight busy-wait to allow other tasks to run
     while (!spi_dma_complete)
     {
         if (HAL_GetTick() - start_tick > Timeout)
         {
             return SPI_STATUS_ERROR;  // Timeout
         }
+        // Yield CPU briefly - HAL_Delay(1) will use vTaskDelay in RTOS environment
+        HAL_Delay(1);
     }
 
     return SPI_STATUS_OK;
