@@ -10,13 +10,14 @@ typedef enum
     RLED_ERR_NULL_POINTER  = -1,
     RLED_ERR_INVALID_TYPE  = -2,
     RLED_ERR_INIT_FAILED   = -3,
-    RLED_ERR_INVALID_PARAM = -4
+    RLED_ERR_INVALID_PARAM = -4,
+    RLED_ERR_PATTERN_BUSY  = -5
 } rled_error_t;
 
 // Forward declarations for hardware config structs
-typedef struct rled_gpio_config rled_gpio_config_t;
-typedef struct rled_pwm_config rled_pwm_config_t;
-typedef struct rled_rgb_config rled_rgb_config_t;
+typedef struct rled_gpio_config   rled_gpio_config_t;
+typedef struct rled_pwm_config    rled_pwm_config_t;
+typedef struct rled_rgb_config    rled_rgb_config_t;
 typedef struct rled_ws2812_config rled_ws2812_config_t;
 
 // LED types
